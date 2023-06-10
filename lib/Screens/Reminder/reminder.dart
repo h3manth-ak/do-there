@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 
 import '../../db/functions/db_functions.dart';
 import '../../db/models/db_models.dart';
+
 
 class Reminder extends StatefulWidget {
   const Reminder({super.key});
@@ -35,6 +37,107 @@ class SwitchClass extends State<Reminder> {
     }
   }
 
+  void showCardDetails(BuildContext context, TaskModel data) async {
+        final Position currentposition=await  Geolocator.getCurrentPosition();
+    // ignore: use_build_context_synchronously
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        double distance=Geolocator.distanceBetween(
+          currentposition.latitude,
+          currentposition.longitude,
+          data.latitude,
+          data.longitude,
+        );
+        distance=distance/1000;
+        distance=double.parse(distance.toStringAsFixed(2));
+        final loc = data.location.split(',');
+
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0.0,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.black87,
+              borderRadius: BorderRadius.circular(25.0),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(
+                    top: 20,
+                    bottom: 4,
+                  ),
+                  child: Text(
+                    data.task,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                    ),
+                  ),
+                ),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(left: 19, top: 3),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.location_on_outlined,
+                              color: Colors.greenAccent,
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(right: 30),
+                              child: Text(
+                                "${loc[0]},${loc[1]}",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ),
+                            
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                Padding(
+                  padding: const EdgeInsets.only(top: 30, left: 40),
+                  child: Row(
+                    children: [
+                      Text(
+                        '$distance km',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                        ),
+                      ),
+                      
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Close'),
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     getAllTask();
@@ -61,8 +164,9 @@ class SwitchClass extends State<Reminder> {
                   clipBehavior: Clip.hardEdge,
                   child: InkWell(
                     splashColor: Colors.blue.withAlpha(30),
-                    onTap: () {
+                    onTap: ()  {
                       debugPrint('Card tapped.');
+                      showCardDetails(context, data);
                     },
                     child: SizedBox(
                       width: 150,
@@ -133,26 +237,21 @@ class SwitchClass extends State<Reminder> {
                             padding: EdgeInsets.only(top: 30, left: 50),
                             child: Switch(
                               value: data.isOn,
-                              onChanged: (value){
-                                if(data.isOn==false){
-
-                                setState(() {
-                                  data.isOn=value;
-                                  data.isVisible = false;
-
-                                });
-                                }
-                                else{
+                              onChanged: (value) {
+                                if (data.isOn == false) {
                                   setState(() {
-                                    data.isOn=value;
+                                    data.isOn = value;
+                                    data.isVisible = false;
+                                  });
+                                } else {
+                                  setState(() {
+                                    data.isOn = value;
                                     data.isVisible = true;
-
                                   });
                                 }
                               },
                               activeColor: Colors.white,
-                              activeTrackColor:
-                                  Color.fromARGB(255, 30, 232, 8),
+                              activeTrackColor: Color.fromARGB(255, 30, 232, 8),
                               inactiveThumbColor: Colors.white,
                               inactiveTrackColor: Colors.grey,
                             ),
@@ -167,31 +266,46 @@ class SwitchClass extends State<Reminder> {
           },
         ),
       ),
-      bottomNavigationBar: Container(
-        height: 60,
-        color: Colors.black,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // print('hello reminder ');
+          Navigator.of(context).pushNamed('reminder_data');
+        },
+        // splashColor: Colors.green,
+        backgroundColor: Color.fromARGB(255, 20, 19, 19),
+        heroTag: 'Task',
+        tooltip: 'Add Task',
+        child: const Icon(
+          Icons.add,
+          color: Colors.green,
+          // size: 45,
+        ),
+      ),
+      bottomNavigationBar: BottomAppBar(
+        // height: 60,
+        color: Color.fromARGB(255, 20, 19, 19),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.start,
+          // crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-                padding: EdgeInsets.only(bottom: 15),
-                child: Center(
-                  child: IconButton(
-                    onPressed: () {
-                      // print('hello reminder ');
-                      Navigator.of(context).pushNamed('reminder_data');
-                    },
-                    icon: Icon(
-                      Icons.add,
-                      color: Colors.green,
-                      size: 45,
-                    ),
-                    splashColor: Colors.green,
-                  ),
-                ))
+            Expanded(
+                child: FloatingActionButton(
+              onPressed: () {
+                // Navigator.popUntil(
+                //     context, (route) => route.settings.name == 'home_screen');
+              },
+              heroTag: 'home',
+              tooltip: 'Home',
+              child: const Icon(
+                Icons.home,
+                color: Colors.green,
+              ),
+              backgroundColor: Color.fromARGB(255, 20, 19, 19),
+            ))
           ],
         ),
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
     );
   }
 }

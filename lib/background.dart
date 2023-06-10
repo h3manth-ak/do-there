@@ -1,10 +1,9 @@
-// import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
-import 'package:flutter/material.dart';
+
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_sms/flutter_sms.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:hive_flutter/adapters.dart';
-import 'Screens/Reminder/alarm.dart';
+
 import 'db/models/db_models.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
@@ -31,32 +30,33 @@ void distanceMeasure() async {
   }
 
   notifyList = await getAllNotifybg();
-  print(notifyList);
+  // print(notifyList);
 
-  bool serviceEnabled;
-  LocationPermission permission;
+  // bool serviceEnabled;
+  // LocationPermission permission;
 
-  serviceEnabled = await Geolocator.isLocationServiceEnabled();
-  if (!serviceEnabled) {
-    return Future.error('Location services are disabled.');
-  }
+  // serviceEnabled = await Geolocator.isLocationServiceEnabled();
+  // if (!serviceEnabled) {
+  //   return Future.error('Location services are disabled.');
+  // }
 
-  permission = await Geolocator.checkPermission();
-  if (permission == LocationPermission.denied) {
-    permission = await Geolocator.requestPermission();
-    if (permission == LocationPermission.denied) {
-      return Future.error('Location permissions are denied');
-    }
-  }
+  // permission = await Geolocator.checkPermission();
+  // if (permission == LocationPermission.denied) {
+  //   permission = await Geolocator.requestPermission();
+  //   if (permission == LocationPermission.denied) {
+  //     return Future.error('Location permissions are denied');
+  //   }
+  // }
 
-  if (permission == LocationPermission.deniedForever) {
-    return Future.error(
-        'Location permissions are permanently denied, we cannot request permissions.');
-  }
+  // if (permission == LocationPermission.deniedForever) {
+  //   return Future.error(
+  //       'Location permissions are permanently denied, we cannot request permissions.');
+  // }
 
   final currentPosition = await Geolocator.getCurrentPosition(
     desiredAccuracy: LocationAccuracy.best,
   );
+  print(currentPosition);
 
   for (int i = 0; i < notifyList.length; i++) {
     double latitude = notifyList[i].latitude;
@@ -117,7 +117,7 @@ Future<void> _showNotification(
     platformChannelSpecifics,
     payload: notificationId,
   );
-   _sendsms();
+  //  _sendsms();
 }
 void backgroundTask() async {
   distanceMeasure();
@@ -238,7 +238,7 @@ void reminderbackgroundTask() async {
 }
 
 
-void backgroundTaskTest() async {
+ backgroundTaskTest() async {
   distanceMeasure();
   reminderdistanceMeasure();
 }

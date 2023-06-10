@@ -1,5 +1,5 @@
 import 'dart:async';
-
+import 'dart:math';
 import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -7,15 +7,14 @@ import 'package:geolocator/geolocator.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:location_based_reminder/Screens/Notify/notify_data.dart';
 import 'package:location_based_reminder/Screens/Notify/notify_page.dart';
-// import 'package:location_based_reminder/Screens/Reminder/alarm.dart';
+import 'package:location_based_reminder/Screens/Notify/user_details.dart';
 import 'package:location_based_reminder/Screens/Reminder/reminder.dart';
 import 'package:location_based_reminder/Screens/home/screen_home.dart';
 import 'package:location_based_reminder/db/models/db_models.dart';
-// import 'package:geolocator/geolocator.dart';
-// import 'dart:math' show cos, sqrt, sin, pi, atan2;
-
+import 'package:permission_handler/permission_handler.dart';
 import 'Screens/Reminder/input_data.dart';
-import 'background.dart';
+import 'background.dart'as bgnd;
+import 'bg_app.dart'as bg ;
 // import 'package:location_based_reminder/home/screen_home.dart';
 
 Future<void> main() async {
@@ -52,6 +51,11 @@ Future<void> main() async {
     return Future.error(
         'Location permissions are permanently denied, we cannot request permissions.');
   }
+  final notificationPermissionStatus = await Permission.notification.status;
+  if (notificationPermissionStatus.isDenied) {
+    await Permission.notification.request();
+  }
+
   await AndroidAlarmManager.initialize();
 
   const AndroidInitializationSettings initializationSettingsAndroid =
@@ -59,14 +63,16 @@ Future<void> main() async {
   const InitializationSettings initializationSettings =
       InitializationSettings(android: initializationSettingsAndroid);
 
-  await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+  await bgnd.flutterLocalNotificationsPlugin.initialize(initializationSettings);
+  await bg.flutterLocalNotificationsPlugin.initialize(initializationSettings);
   
+  await bg.initializeService();
   // runApp(const MyApp());
   
   await AndroidAlarmManager.periodic(
     const Duration(minutes: 1),
-    0,
-    backgroundTaskTest,
+    Random().nextInt(100000),
+    bgnd.backgroundTaskTest,
     // reminderbackgroundTask,
     exact: true,
     wakeup: true,
@@ -103,8 +109,9 @@ class _MyAppState extends State<MyApp> {
   void initState()  {
     super.initState();
     // You can call backgroundTask here if needed when the app is launched.
-    backgroundTask();
-    reminderbackgroundTask();
+    bg.initializeService();
+    bgnd.backgroundTask();
+    bgnd.reminderbackgroundTask();
   }
   
 
@@ -137,7 +144,8 @@ class _MyAppState extends State<MyApp> {
         },
         'home_screen':(ctx) {
           return const HomeScreen();
-        }
+        },
+        'user':(ctx)=>const UserScreen()
         // 'alarm':(ctx){
         //   return AlarmScreen();
         // }

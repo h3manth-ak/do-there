@@ -1,14 +1,9 @@
-// import 'dart:ffi';
-// import 'dart:math' show cos, sqrt, asin;
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:geolocator/geolocator.dart';
-// import 'package:location_based_reminder/Screens/Reminder/alarm.dart';
-// import 'package:location_based_reminder/db/functions/db_functions.dart';
 import '../../db/functions/db_functions.dart';
 import '../../db/models/db_models.dart';
-// import 'package:hive_flutter/adapters.dart';
-
 
 class Notify extends StatefulWidget {
   const Notify({Key? key}) : super(key: key);
@@ -26,68 +21,138 @@ class SwitchClass extends State<Notify> {
   Position? selectedLocation;
   String distanceText = '';
 
-  // @override
-  // void initState() {
-  //   super.initState();
-  //   _startTracking();
-  // }
-
-  // void _startTracking() {
-  //   positionSubscription = Geolocator.getPositionStream(
-  //           )
-  //       .listen((Position position) {
-  //     setState(() {
-  //       if (previousLocation == null ||
-  //           Geolocator.distanceBetween(
-  //                   previousLocation!.latitude,
-  //                   previousLocation!.longitude,
-  //                   position.latitude,
-  //                   position.longitude) >=
-  //               200) {
-  //         previousLocation = position;
-  //         // Perform your distance calculation and updates here
-  //         updateDistances(position.latitude, position.longitude);
-  //       }
-  //     });
-  //   });
-  // }
-
-  // void updateDistances(double currentLatitude, double currentLongitude) {
-  //   // Iterate through notifyList and calculate distance for each entry
-  //   for (final notifyModel in notifyListNotifier.value) {
-  //     double distance = Geolocator.distanceBetween(
-  //         currentLatitude, currentLongitude, notifyModel.latitude, notifyModel.longitude);
-  //     final distanceKm = distance / 1000; // Convert to kilometers
-  //     notifyModel.bal_distance = distanceKm.roundToDouble(); // Update distance
-  //   }
-  // }
-  
-
-
-  void toggleSwitch(bool value) {
+  void toggleSwitch(bool value) async {
+    final service = FlutterBackgroundService();
+    bool isRunning = await service.isRunning();
     if (isSwitched == false) {
+      FlutterBackgroundService().invoke('setAsForeground');
+      FlutterBackgroundService().invoke('setAsBackground');
+      if (!isRunning) {
+        service.startService();
+      }
       setState(() {
         isSwitched = true;
         textValue = 'Switch Button is ON';
         _isvisible = false;
       });
-      // print('Switch Button is ON');
     } else {
+      if (isRunning) {
+        FlutterBackgroundService().invoke('stopService');
+      }
+
       setState(() {
         isSwitched = false;
         textValue = 'Switch Button is OFF';
         _isvisible = true;
       });
-      // print('Switch Button is OFF');
     }
   }
 
+  void showCardDetails(BuildContext context, NotifyModel data) async {
+        final Position currentposition=await  Geolocator.getCurrentPosition();
+    // ignore: use_build_context_synchronously
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        double distance=Geolocator.distanceBetween(
+          currentposition.latitude,
+          currentposition.longitude,
+          data.latitude,
+          data.longitude,
+        );
+        distance=distance/1000;
+        distance=double.parse(distance.toStringAsFixed(2));
+        final loc = data.location.split(',');
+
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0.0,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.black87,
+              borderRadius: BorderRadius.circular(25.0),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(
+                    top: 20,
+                    bottom: 4,
+                  ),
+                  child: Text(
+                    data.name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                    ),
+                  ),
+                ),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(left: 19, top: 3),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.location_on_outlined,
+                              color: Colors.greenAccent,
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(right: 30),
+                              child: Text(
+                                "${loc[0]},${loc[1]}",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ),
+                            
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                Padding(
+                  padding: const EdgeInsets.only(top: 30, left: 40),
+                  child: Row(
+                    children: [
+                      Text(
+                        '$distance km',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                        ),
+                      ),
+                      
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Close'),
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
-  Widget build(BuildContext context)  {
-    // print('before');
+  Widget build(BuildContext context) {
     getAllNotify();
-    // print('after');
-    print(notifyListNotifier.value);
+    // print(notifyListNotifier.value);
 
     return Scaffold(
       backgroundColor: Colors.black87,
@@ -101,161 +166,198 @@ class SwitchClass extends State<Notify> {
               mainAxisSpacing: 10.0,
               shrinkWrap: true,
               children: List.generate(notifyList.length, (index) {
-                
                 final data = notifyList[index];
-                // final double dist=data.distance as double;
                 final loc = data.location.split(',');
-                print('data $data');
-                  return Card(
-                    color: const Color.fromARGB(255, 39, 39, 39),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(25.0),
-                    ),
-                    clipBehavior: Clip.hardEdge,
-                    child: InkWell(
-                      splashColor: Colors.blue.withAlpha(30),
-                      onTap: () {
-                        debugPrint('Card tapped.');
-                        print(data);
-                      },
-                      child: SizedBox(
-                        width: 170,
-                        height: 150,
-                        child: Column(
-                          children: [
-                            SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              child: Row(
-                                children: [
-                                  Padding(
-                                    padding: EdgeInsets.only(left: 19, top: 3),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.location_on_outlined,
-                                          color: Colors.greenAccent,
+                return Card(
+                  color: const Color.fromARGB(255, 39, 39, 39),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25.0),
+                  ),
+                  clipBehavior: Clip.hardEdge,
+                  child: InkWell(
+                    splashColor: Colors.blue.withAlpha(30),
+                    onTap: () {
+                      showCardDetails(context, data);
+                    },
+                    child: SizedBox(
+                      width: 170,
+                      height: 150,
+                      child: Column(
+                        children: [
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 19, top: 3),
+                                  child: Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.location_on_outlined,
+                                        color: Colors.greenAccent,
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.only(right: 30),
+                                        child: Text(
+                                          "${loc[0]},${loc[1]}",
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 10,
+                                          ),
                                         ),
-                                        Padding(
-                                          padding: const EdgeInsets.only(right: 30),
-                                          child: Text(
-                                            loc[0],
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 10,
+                                      ),
+                                      Visibility(
+                                        visible: data.isVisible,
+                                        child: Padding(
+                                          padding: const EdgeInsets.only(left: 5),
+                                          child: IconButton(
+                                            onPressed: () {
+                                              if (data.id != null) {
+                                                deleteNotify(data.id!);
+                                              } else {
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(const SnackBar(
+                                                        content: Text(
+                                                            'Notify id is null')));
+                                              }
+                                            },
+                                            icon: const Icon(
+                                              Icons.delete,
+                                              color: Colors.redAccent,
+                                              size: 15,
                                             ),
                                           ),
                                         ),
-                                        Visibility(
-                                          visible: data.isVisible,
-                                          child: Padding(
-                                            padding: EdgeInsets.only(left: 5),
-                                            child: IconButton(
-                                              onPressed: () {
-                                                if (data.id != null) {
-                                                  deleteNotify(data.id!);
-                                                } else {
-                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                      SnackBar(content: Text('Notify id is null')));
-                                                }
-                                              },
-                                              icon: Icon(
-                                                Icons.delete,
-                                                color: Colors.redAccent,
-                                                size: 15,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                                      ),
+                                    ],
                                   ),
-                                ],
-                              ),
-                            ),
-                            Padding(
-                              padding: EdgeInsets.only(
-                                top: 20,
-                                bottom: 4,
-                              ),
-                              child: Text(
-                                data.name,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 20,
                                 ),
+                              ],
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(
+                              top: 20,
+                              bottom: 4,
+                            ),
+                            child: Text(
+                              data.name,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
                               ),
                             ),
-                            Padding(
-                              padding: EdgeInsets.only(top: 30, left: 40),
-                              child: Row(
-                                children: [
-                                  Text(
-                                    '${data.distance} km',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 15,
-                                    ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(top: 30, left: 40),
+                            child: Row(
+                              children: [
+                                Text(
+                                  '${data.distance} km',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 15,
                                   ),
-                                  Switch(
-                                    value: data.isOn,
-                                    onChanged: (value) {
-                                      if (data.isOn == false) {
-                                        setState(() {
-                                          data.isOn = value;
-                                          data.isVisible = false;
-                                        });
-                                      } else {
-                                        setState(() {
-                                          data.isOn = value;
-                                          data.isVisible = true;
-                                        });
+                                ),
+                                Switch(
+                                  value: data.isOn,
+                                  onChanged: (value) async {
+                                    final service = FlutterBackgroundService();
+                                    bool isRunning = await service.isRunning();
+                                    if (data.isOn == false) {
+                                      FlutterBackgroundService()
+                                          .invoke('setAsForeground');
+                                      FlutterBackgroundService()
+                                          .invoke('setAsBackground');
+                                      if (!isRunning) {
+                                        service.startService();
                                       }
-                                    },
-                                    activeColor: Colors.white,
-                                    activeTrackColor: Color.fromARGB(255, 30, 232, 8),
-                                    inactiveThumbColor: Colors.white,
-                                    inactiveTrackColor: Colors.grey,
-                                  ),
-                                ],
-                              ),
-                            )
-                          ],
-                        ),
+                                      setState(() {
+                                        data.isOn = value;
+                                        data.isVisible = false;
+                                      });
+                                    } else {
+                                      if (isRunning) {
+                                        FlutterBackgroundService()
+                                            .invoke('stopService');
+                                      }
+
+                                      setState(() {
+                                        data.isOn = value;
+                                        data.isVisible = true;
+                                      });
+                                    }
+                                  },
+                                  activeColor: Colors.white,
+                                  activeTrackColor:
+                                      const Color.fromARGB(255, 30, 232, 8),
+                                  inactiveThumbColor: Colors.white,
+                                  inactiveTrackColor: Colors.grey,
+                                ),
+                              ],
+                            ),
+                          )
+                        ],
                       ),
                     ),
-                  );
-                
-                
+                  ),
+                );
               }),
             );
           },
         ),
       ),
-      bottomNavigationBar: Container(
+      floatingActionButton: FloatingActionButton(
+        heroTag: 'add',
+        tooltip: 'Add Notification',
+        onPressed: () {
+          Navigator.of(context).pushNamed('notify-data');
+        },
+        backgroundColor: const Color.fromARGB(255, 20, 19, 19),
+        child: const Icon(
+          Icons.add,
+          color: Colors.green,
+          size: 45,
+        ),
+      ),
+      bottomNavigationBar: BottomAppBar(
         height: 60,
-        color: Colors.black,
+        color: const Color.fromARGB(255, 20, 19, 19),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            Padding(
-              padding: EdgeInsets.only(bottom: 15),
-              child: Center(
-                child: IconButton(
-                  onPressed: () {
-                    Navigator.of(context).pushNamed('notify-data');
-                  },
-                  icon: Icon(
-                    Icons.add,
-                    color: Colors.green,
-                    size: 45,
-                  ),
-                  splashColor: Colors.green,
+            Expanded(
+              child: FloatingActionButton(
+                heroTag: 'home',
+                tooltip: 'Home',
+                onPressed: () {},
+                backgroundColor: const Color.fromARGB(255, 20, 19, 19),
+                child: const Icon(
+                  Icons.home,
+                  color: Colors.green,
+                  size: 45,
                 ),
               ),
-            )
+            ),
+            Expanded(
+              child: FloatingActionButton(
+                heroTag: 'users',
+                tooltip: 'Saved Contacts',
+                onPressed: () {
+                  Navigator.of(context).pushNamed('user');
+                },
+                backgroundColor: const Color.fromARGB(255, 20, 19, 19),
+                child: const Icon(
+                  Icons.person,
+                  color: Colors.green,
+                  size: 45,
+                ),
+              ),
+            ),
           ],
         ),
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:location_based_reminder/Screens/home/screen_home.dart';
-import 'package:location_based_reminder/main.dart';
+// import 'package:location_based_reminder/main.dart';
 
 class AlarmScreen extends StatelessWidget {
   const AlarmScreen({Key? key, required this.place}) : super(key: key);
