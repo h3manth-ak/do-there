@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_background_service/flutter_background_service.dart';
+// import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../db/functions/db_functions.dart';
 import '../../db/models/db_models.dart';
@@ -9,60 +9,36 @@ class Notify extends StatefulWidget {
   const Notify({Key? key}) : super(key: key);
 
   @override
-  SwitchClass createState() => SwitchClass();
+  _NotifyState createState() => _NotifyState();
 }
 
-class SwitchClass extends State<Notify> {
-  bool isSwitched = true;
-  String textValue = 'Switch is ON';
-  bool _isvisible = false;
+class _NotifyState extends State<Notify> {
   StreamSubscription<Position>? positionSubscription;
   Position? previousLocation;
   Position? selectedLocation;
   String distanceText = '';
 
-  void toggleSwitch(bool value) async {
-    final service = FlutterBackgroundService();
-    bool isRunning = await service.isRunning();
-    if (isSwitched == false) {
-      FlutterBackgroundService().invoke('setAsForeground');
-      FlutterBackgroundService().invoke('setAsBackground');
-      if (!isRunning) {
-        service.startService();
-      }
-      setState(() {
-        isSwitched = true;
-        textValue = 'Switch Button is ON';
-        _isvisible = false;
-      });
-    } else {
-      if (isRunning) {
-        FlutterBackgroundService().invoke('stopService');
-      }
-
-      setState(() {
-        isSwitched = false;
-        textValue = 'Switch Button is OFF';
-        _isvisible = true;
-      });
-    }
+  @override
+  void initState() {
+    super.initState();
+    getAllNotify();
   }
 
   void showCardDetails(BuildContext context, NotifyModel data) async {
-        final Position currentposition=await  Geolocator.getCurrentPosition();
-    // ignore: use_build_context_synchronously
+    final Position currentposition = await Geolocator.getCurrentPosition();
+    final loc = data.location.split(',');
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        double distance=Geolocator.distanceBetween(
+        double distance = Geolocator.distanceBetween(
           currentposition.latitude,
           currentposition.longitude,
           data.latitude,
           data.longitude,
         );
-        distance=distance/1000;
-        distance=double.parse(distance.toStringAsFixed(2));
-        final loc = data.location.split(',');
+        distance = distance / 1000;
+        distance = double.parse(distance.toStringAsFixed(2));
 
         return Dialog(
           backgroundColor: Colors.transparent,
@@ -110,14 +86,12 @@ class SwitchClass extends State<Notify> {
                                 ),
                               ),
                             ),
-                            
                           ],
                         ),
                       ),
                     ],
                   ),
                 ),
-                
                 Padding(
                   padding: const EdgeInsets.only(top: 30, left: 40),
                   child: Row(
@@ -129,7 +103,6 @@ class SwitchClass extends State<Notify> {
                           fontSize: 15,
                         ),
                       ),
-                      
                     ],
                   ),
                 ),
@@ -151,22 +124,19 @@ class SwitchClass extends State<Notify> {
 
   @override
   Widget build(BuildContext context) {
-    getAllNotify();
-    // print(notifyListNotifier.value);
-
     return Scaffold(
       backgroundColor: Colors.black87,
       body: SafeArea(
-        child: ValueListenableBuilder(
+        child: ValueListenableBuilder<List<NotifyModel>>(
           valueListenable: notifyListNotifier,
-          builder: (BuildContext ctx, List<NotifyModel> notifyList, Widget? child) {
+          builder:
+              (BuildContext ctx, List<NotifyModel> notifyList, Widget? child) {
             return GridView.count(
               crossAxisCount: 2,
               crossAxisSpacing: 10.0,
               mainAxisSpacing: 10.0,
               shrinkWrap: true,
-              children: List.generate(notifyList.length, (index) {
-                final data = notifyList[index];
+              children: notifyList.map((NotifyModel data) {
                 final loc = data.location.split(',');
                 return Card(
                   color: const Color.fromARGB(255, 39, 39, 39),
@@ -189,7 +159,8 @@ class SwitchClass extends State<Notify> {
                             child: Row(
                               children: [
                                 Padding(
-                                  padding: const EdgeInsets.only(left: 19, top: 3),
+                                  padding:
+                                      const EdgeInsets.only(left: 19, top: 3),
                                   child: Row(
                                     children: [
                                       const Icon(
@@ -197,7 +168,8 @@ class SwitchClass extends State<Notify> {
                                         color: Colors.greenAccent,
                                       ),
                                       Padding(
-                                        padding: const EdgeInsets.only(right: 30),
+                                        padding:
+                                            const EdgeInsets.only(right: 30),
                                         child: Text(
                                           "${loc[0]},${loc[1]}",
                                           style: const TextStyle(
@@ -209,17 +181,11 @@ class SwitchClass extends State<Notify> {
                                       Visibility(
                                         visible: data.isVisible,
                                         child: Padding(
-                                          padding: const EdgeInsets.only(left: 5),
+                                          padding:
+                                              const EdgeInsets.only(left: 5),
                                           child: IconButton(
                                             onPressed: () {
-                                              if (data.id != null) {
-                                                deleteNotify(data.id!);
-                                              } else {
-                                                ScaffoldMessenger.of(context)
-                                                    .showSnackBar(const SnackBar(
-                                                        content: Text(
-                                                            'Notify id is null')));
-                                              }
+                                              deleteNotify(data.id);
                                             },
                                             icon: const Icon(
                                               Icons.delete,
@@ -236,10 +202,7 @@ class SwitchClass extends State<Notify> {
                             ),
                           ),
                           Padding(
-                            padding: const EdgeInsets.only(
-                              top: 20,
-                              bottom: 4,
-                            ),
+                            padding: const EdgeInsets.only(top: 20, bottom: 4),
                             child: Text(
                               data.name,
                               style: const TextStyle(
@@ -261,32 +224,12 @@ class SwitchClass extends State<Notify> {
                                 ),
                                 Switch(
                                   value: data.isOn,
-                                  onChanged: (value) async {
-                                    final service = FlutterBackgroundService();
-                                    bool isRunning = await service.isRunning();
-                                    if (data.isOn == false) {
-                                      FlutterBackgroundService()
-                                          .invoke('setAsForeground');
-                                      FlutterBackgroundService()
-                                          .invoke('setAsBackground');
-                                      if (!isRunning) {
-                                        service.startService();
-                                      }
-                                      setState(() {
-                                        data.isOn = value;
-                                        data.isVisible = false;
-                                      });
-                                    } else {
-                                      if (isRunning) {
-                                        FlutterBackgroundService()
-                                            .invoke('stopService');
-                                      }
-
-                                      setState(() {
-                                        data.isOn = value;
-                                        data.isVisible = true;
-                                      });
-                                    }
+                                  onChanged: (value) {
+                                    setState(() {
+                                      data.isOn = value;
+                                      data.isVisible = !value;
+                                    });
+                                    // updateNotify(data.id, data.isOn);
                                   },
                                   activeColor: Colors.white,
                                   activeTrackColor:
@@ -296,13 +239,13 @@ class SwitchClass extends State<Notify> {
                                 ),
                               ],
                             ),
-                          )
+                          ),
                         ],
                       ),
                     ),
                   ),
                 );
-              }),
+              }).toList(),
             );
           },
         ),
@@ -330,12 +273,14 @@ class SwitchClass extends State<Notify> {
               child: FloatingActionButton(
                 heroTag: 'home',
                 tooltip: 'Home',
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.of(context).pushNamed('home_screen');
+                },
                 backgroundColor: const Color.fromARGB(255, 20, 19, 19),
                 child: const Icon(
                   Icons.home,
                   color: Colors.green,
-                  size: 45,
+                  size: 30,
                 ),
               ),
             ),
@@ -353,7 +298,7 @@ class SwitchClass extends State<Notify> {
                   size: 45,
                 ),
               ),
-            ),
+            )
           ],
         ),
       ),

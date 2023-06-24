@@ -17,25 +17,6 @@ class SwitchClass extends State<Reminder> {
   List<bool> isSelected = [true];
   bool isSwitched = true;
   var textValue = 'Switch is ON';
-  bool _isvisible = false;
-
-  void toggleSwitch(bool value) {
-    if (isSwitched == false) {
-      setState(() {
-        isSwitched = true;
-        textValue = 'Switch Button is ON';
-        _isvisible = false;
-      });
-      print('Switch Button is ON');
-    } else {
-      setState(() {
-        isSwitched = false;
-        textValue = 'Switch Button is OFF';
-        _isvisible = true;
-      });
-      print('Switch Button is OFF');
-    }
-  }
 
   void showCardDetails(BuildContext context, TaskModel data) async {
         final Position currentposition=await  Geolocator.getCurrentPosition();
@@ -157,7 +138,7 @@ class SwitchClass extends State<Reminder> {
                 final data = taskList[index];
                 final loc = data.location.split(',');
                 return Card(
-                  color: Color.fromARGB(255, 39, 39, 39),
+                  color: const Color.fromARGB(255, 39, 39, 39),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(25.0),
                   ),
@@ -178,16 +159,16 @@ class SwitchClass extends State<Reminder> {
                             child: Row(
                               children: [
                                 Padding(
-                                  padding: EdgeInsets.only(left: 19, top: 3),
+                                  padding: const EdgeInsets.only(left: 19, top: 3),
                                   child: Row(
                                     children: [
-                                      Icon(
+                                      const Icon(
                                         Icons.location_on_outlined,
                                         color: Colors.greenAccent,
                                       ),
                                       Text(
                                         loc[0],
-                                        style: TextStyle(
+                                        style: const TextStyle(
                                           color: Colors.white,
                                           fontSize: 10,
                                         ),
@@ -195,19 +176,19 @@ class SwitchClass extends State<Reminder> {
                                       Visibility(
                                         visible: data.isVisible,
                                         child: Padding(
-                                            padding: EdgeInsets.only(left: 5),
+                                            padding: const EdgeInsets.only(left: 5),
                                             child: IconButton(
                                               onPressed: () {
                                                 if (data.id != null) {
                                                   deleteTask(data.id!);
                                                 } else {
                                                   ScaffoldMessenger.of(context)
-                                                      .showSnackBar(SnackBar(
+                                                      .showSnackBar(const SnackBar(
                                                           content: Text(
                                                               'Student id is null')));
                                                 }
                                               },
-                                              icon: Icon(
+                                              icon: const Icon(
                                                 Icons.delete,
                                                 color: Colors.redAccent,
                                                 size: 15,
@@ -221,20 +202,20 @@ class SwitchClass extends State<Reminder> {
                             ),
                           ),
                           Padding(
-                            padding: EdgeInsets.only(
+                            padding: const EdgeInsets.only(
                               top: 20,
                               bottom: 4,
                             ),
                             child: Text(
                               data.task,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 20,
                               ),
                             ),
                           ),
                           Padding(
-                            padding: EdgeInsets.only(top: 30, left: 50),
+                            padding: const EdgeInsets.only(top: 30, left: 50),
                             child: Switch(
                               value: data.isOn,
                               onChanged: (value) {
@@ -251,7 +232,7 @@ class SwitchClass extends State<Reminder> {
                                 }
                               },
                               activeColor: Colors.white,
-                              activeTrackColor: Color.fromARGB(255, 30, 232, 8),
+                              activeTrackColor: const Color.fromARGB(255, 30, 232, 8),
                               inactiveThumbColor: Colors.white,
                               inactiveTrackColor: Colors.grey,
                             ),
@@ -272,7 +253,7 @@ class SwitchClass extends State<Reminder> {
           Navigator.of(context).pushNamed('reminder_data');
         },
         // splashColor: Colors.green,
-        backgroundColor: Color.fromARGB(255, 20, 19, 19),
+        backgroundColor: const Color.fromARGB(255, 20, 19, 19),
         heroTag: 'Task',
         tooltip: 'Add Task',
         child: const Icon(
@@ -283,7 +264,7 @@ class SwitchClass extends State<Reminder> {
       ),
       bottomNavigationBar: BottomAppBar(
         // height: 60,
-        color: Color.fromARGB(255, 20, 19, 19),
+        color: const Color.fromARGB(255, 20, 19, 19),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.start,
           // crossAxisAlignment: CrossAxisAlignment.start,
@@ -300,12 +281,27 @@ class SwitchClass extends State<Reminder> {
                 Icons.home,
                 color: Colors.green,
               ),
-              backgroundColor: Color.fromARGB(255, 20, 19, 19),
+              backgroundColor: const Color.fromARGB(255, 20, 19, 19),
+            )),
+            Expanded(
+                child: FloatingActionButton(
+              onPressed: () {
+                Navigator.of(context).pushNamed('today');
+                // Navigator.popUntil(
+                //     context, (route) => route.settings.name == 'home_screen');
+              },
+              heroTag: 'today_tag',
+              tooltip: 'Today',
+              child: const Icon(
+                Icons.calendar_today_outlined,
+                color: Colors.green,
+              ),
+              backgroundColor: const Color.fromARGB(255, 20, 19, 19),
             ))
           ],
         ),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 }

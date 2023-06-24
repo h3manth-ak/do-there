@@ -8,15 +8,16 @@ import 'package:hive_flutter/adapters.dart';
 import 'package:location_based_reminder/Screens/Notify/notify_data.dart';
 import 'package:location_based_reminder/Screens/Notify/notify_page.dart';
 import 'package:location_based_reminder/Screens/Notify/user_details.dart';
+import 'package:location_based_reminder/Screens/Reminder/input_data.dart';
 import 'package:location_based_reminder/Screens/Reminder/reminder.dart';
+import 'package:location_based_reminder/Screens/Reminder/today_data.dart';
 import 'package:location_based_reminder/Screens/home/screen_home.dart';
 import 'package:location_based_reminder/db/models/db_models.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'Screens/Reminder/input_data.dart';
-import 'background.dart'as bgnd;
-import 'bg_app.dart'as bg ;
-// import 'package:location_based_reminder/home/screen_home.dart';
+import 'background.dart' as bgnd;
+import 'bg_app.dart' as bg;
 
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   Hive.initFlutter();
@@ -32,7 +33,6 @@ Future<void> main() async {
   bool serviceEnabled;
   LocationPermission permission;
 
-  
   serviceEnabled = await Geolocator.isLocationServiceEnabled();
   if (!serviceEnabled) {
     return Future.error('Location services are disabled.');
@@ -65,34 +65,16 @@ Future<void> main() async {
 
   await bgnd.flutterLocalNotificationsPlugin.initialize(initializationSettings);
   await bg.flutterLocalNotificationsPlugin.initialize(initializationSettings);
-  
+
   await bg.initializeService();
-  // runApp(const MyApp());
-  
+
   await AndroidAlarmManager.periodic(
     const Duration(minutes: 1),
     Random().nextInt(100000),
     bgnd.backgroundTaskTest,
-    // reminderbackgroundTask,
     exact: true,
     wakeup: true,
   );
-  // await AndroidAlarmManager.periodic(
-  //   const Duration(minutes: 1),
-  //   0,
-  //   backgroundTask,
-  //   // reminderbackgroundTask,
-  //   exact: true,
-  //   wakeup: true,
-  // );
-  // await AndroidAlarmManager.periodic(
-  //   const Duration(minutes: 1),
-  //   0,
-  //   reminderbackgroundTask,
-  //   exact: true,
-  //   wakeup: true,
-  // );
-  
 
   runApp(const MyApp());
 }
@@ -106,29 +88,26 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   @override
-  void initState()  {
+  void initState() {
     super.initState();
-    // You can call backgroundTask here if needed when the app is launched.
     bg.initializeService();
     bgnd.backgroundTask();
     bgnd.reminderbackgroundTask();
   }
-  
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primaryColor: Colors.blue,
         inputDecorationTheme: const InputDecorationTheme(
-          filled: true, //<-- SEE HERE
-          fillColor: Colors.grey, //<-- SEE HERE
+          filled: true,
+          fillColor: Colors.grey,
         ),
       ),
-
       home: const HomeScreen(),
-      // home:  AlarmScreen(),
       routes: {
         'notify_home': (ctx) {
           return const Notify();
@@ -142,13 +121,11 @@ class _MyAppState extends State<MyApp> {
         'notify-data': (ctx) {
           return NotifyInput();
         },
-        'home_screen':(ctx) {
+        'home_screen': (ctx) {
           return const HomeScreen();
         },
-        'user':(ctx)=>const UserScreen()
-        // 'alarm':(ctx){
-        //   return AlarmScreen();
-        // }
+        'user': (ctx) => const UserScreen(),
+        'today':(ctx)=>  TodayTasksScreen(),
       },
     );
   }

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+// import 'package:location_based_reminder/Screens/home/info_screen.dart';
+import 'package:location_based_reminder/Screens/home/settings.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -7,14 +9,24 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black87,
-      appBar: AppBar(
-        title: const Text('DO THERE',
-            style:TextStyle(
-              color: Colors.white54,
-              fontSize: 20,
-              fontStyle: FontStyle.italic
-            )),
+      appBar:AppBar(
+        title: const Text(
+          'DO THERE',
+          style: TextStyle(
+            color: Colors.white54,
+            fontSize: 20,
+            fontStyle: FontStyle.italic,
+          ),
+        ),
         backgroundColor: Colors.black45,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.settings),
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => SettingsScreen()));
+            },
+          ),
+        ],
       ),
       body: SafeArea(
         

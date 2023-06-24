@@ -21,16 +21,17 @@ class TaskModelAdapter extends TypeAdapter<TaskModel> {
       longitude: fields[4] as double,
       task: fields[1] as String,
       location: fields[2] as String,
-      id: fields[0] as int?,
-    );
+      category: fields[6] as String,
+      date: fields[5] as DateTime?,
+    ).._id = fields[0] as int?;
   }
 
   @override
   void write(BinaryWriter writer, TaskModel obj) {
     writer
-      ..writeByte(5)
+      ..writeByte(7)
       ..writeByte(0)
-      ..write(obj.id)
+      ..write(obj._id)
       ..writeByte(1)
       ..write(obj.task)
       ..writeByte(2)
@@ -38,7 +39,11 @@ class TaskModelAdapter extends TypeAdapter<TaskModel> {
       ..writeByte(3)
       ..write(obj.latitude)
       ..writeByte(4)
-      ..write(obj.longitude);
+      ..write(obj.longitude)
+      ..writeByte(5)
+      ..write(obj.date)
+      ..writeByte(6)
+      ..write(obj.category);
   }
 
   @override
@@ -68,16 +73,16 @@ class NotifyModelAdapter extends TypeAdapter<NotifyModel> {
       name: fields[1] as String,
       distance: fields[2] as double?,
       location: fields[3] as String,
-      id: fields[0] as int?,
-    );
+      date: fields[6] as DateTime?,
+    ).._id = fields[0] as int?;
   }
 
   @override
   void write(BinaryWriter writer, NotifyModel obj) {
     writer
-      ..writeByte(6)
+      ..writeByte(7)
       ..writeByte(0)
-      ..write(obj.id)
+      ..write(obj._id)
       ..writeByte(1)
       ..write(obj.name)
       ..writeByte(2)
@@ -87,7 +92,9 @@ class NotifyModelAdapter extends TypeAdapter<NotifyModel> {
       ..writeByte(4)
       ..write(obj.latitude)
       ..writeByte(5)
-      ..write(obj.longitude);
+      ..write(obj.longitude)
+      ..writeByte(6)
+      ..write(obj.date);
   }
 
   @override

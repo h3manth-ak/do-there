@@ -1,101 +1,178 @@
-
+// import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_sms/flutter_sms.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:hive_flutter/adapters.dart';
-
+import 'package:location_based_reminder/Screens/Reminder/alarm.dart';
+import 'package:location_based_reminder/main.dart';
+// import 'package:location_based_reminder/db/functions/db_functions.dart';
+import 'package:path_provider/path_provider.dart';
+// import 'dart:io';
 import 'db/models/db_models.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
+import 'package:intl/intl.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
 
-void distanceMeasure() async {
-  print('distancemeasure');
+distanceMeasure() async {
   double distance;
   List<NotifyModel> notifyList = [];
-
+  List<UserModel> userList = [];
+  String phone='';
   await Hive.initFlutter();
 
-  Future<List<NotifyModel>> getAllNotifybg() async {
-    if (!Hive.isAdapterRegistered(NotifyModelAdapter().typeId)) {
-      Hive.registerAdapter(NotifyModelAdapter());
-    }
-    final notifyBox = await Hive.openBox<NotifyModel>('notify_db');
-    print(' notify db values ${notifyBox.values}');
-    notifyList.clear();
-    notifyList.addAll(notifyBox.values);
-    return notifyList;
+  if (!Hive.isAdapterRegistered(NotifyModelAdapter().typeId)) {
+    Hive.registerAdapter(NotifyModelAdapter());
+  }
+  if (!Hive.isAdapterRegistered(UserModelAdapter().typeId)) {
+    Hive.registerAdapter(UserModelAdapter());
   }
 
-  notifyList = await getAllNotifybg();
-  // print(notifyList);
+  final appDir = await getApplicationDocumentsDirectory();
 
-  // bool serviceEnabled;
-  // LocationPermission permission;
+  // ignore: unnecessary_null_comparison
+  if (appDir != null) {
+    // final notifyDir = Directory('${appDir.path}/notify_db');
+    // await notifyDir.create(recursive: true);
+    // final notifyBox =
+    //     await Hive.openBox<NotifyModel>(appDir.path + '/notify_db');
+    // final lockFile = File('${appDir.path}/notify_db.lock');
+    // if (await lockFile.exists()) {
+    //   // print('dock file exist');
+    //   await lockFile.delete();
+    // }
 
-  // serviceEnabled = await Geolocator.isLocationServiceEnabled();
-  // if (!serviceEnabled) {
-  //   return Future.error('Location services are disabled.');
-  // }
+    final notifyBox =
+        await Hive.openBox<NotifyModel>('notify_db', path: appDir.path);
+    notifyList.clear();
+    notifyList.addAll(notifyBox.values);
 
-  // permission = await Geolocator.checkPermission();
-  // if (permission == LocationPermission.denied) {
-  //   permission = await Geolocator.requestPermission();
-  //   if (permission == LocationPermission.denied) {
-  //     return Future.error('Location permissions are denied');
-  //   }
-  // }
+    final userBox = await Hive.openBox<UserModel>('user_db', path: appDir.path);
+    userList.clear();
+    userList.addAll(userBox.values);
 
-  // if (permission == LocationPermission.deniedForever) {
-  //   return Future.error(
-  //       'Location permissions are permanently denied, we cannot request permissions.');
-  // }
+    final currentPosition = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.best,
+    );
+
+    for (int i = 0; i < notifyList.length; i++) {
+      double latitude = notifyList[i].latitude;
+      double longitude = notifyList[i].longitude;
+      DateTime? storedDate =
+          notifyList[i].date; // Date stored in the NotifyModel object
+      DateTime today = DateTime.now(); // Current date
+      bool isSameDate;
+      // Compare the date component only, ignoring the time
+      isSameDate = DateFormat('yyyy-MM-dd').format(storedDate!) ==
+          DateFormat('yyyy-MM-dd').format(today);
+      distance = Geolocator.distanceBetween(
+        currentPosition.latitude,
+        currentPosition.longitude,
+        latitude,
+        longitude,
+      );
+      for(int j = 0; j < userList.length; j++){
+        if(notifyList[i].name==userList[j].name){
+          phone=userList[j].phno;
+        }
+      }
+      if (notifyList[i].distance != null) {
+        if (notifyList[i].date==null ||isSameDate) {
+        if (distance < 2000) {
+          await _showNotification(
+            notifyList[i].location,
+            notifyList[i].name,
+            i.toString(),
+            phone
+          );
+        }
+         }
+      }
+    }
+
+    // Close the Hive box to clean up resources
+    await notifyBox.close();
+    // ...
+    // await notifyBox.close();
+  } else {}
+
+  final notifyBox = await Hive.openBox<NotifyModel>('notify_db');
+
+  notifyList.clear();
+  notifyList.addAll(notifyBox.values);
+
+  final userBox = await Hive.openBox<UserModel>('user_db', path: appDir.path);
+    userList.clear();
+    userList.addAll(userBox.values);
 
   final currentPosition = await Geolocator.getCurrentPosition(
     desiredAccuracy: LocationAccuracy.best,
   );
-  print(currentPosition);
 
   for (int i = 0; i < notifyList.length; i++) {
     double latitude = notifyList[i].latitude;
     double longitude = notifyList[i].longitude;
+    DateTime? storedDate =
+        notifyList[i].date; // Date stored in the NotifyModel object
+    DateTime today = DateTime.now(); // Current date
+    bool isSameDate;
+    // Compare the date component only, ignoring the time
+    isSameDate = DateFormat('yyyy-MM-dd').format(storedDate!) ==
+        DateFormat('yyyy-MM-dd').format(today);
+    print(isSameDate);
+    print(notifyList[i].date);
+    print(notifyList[i].date == null);
+    for(int j = 0; j < userList.length; j++){
+        if(notifyList[i].name==userList[j].name){
+          phone=userList[j].phno;
+        }
+      }
+
     distance = Geolocator.distanceBetween(
       currentPosition.latitude,
       currentPosition.longitude,
       latitude,
       longitude,
     );
-    print(distance);
     if (notifyList[i].distance != null) {
-      if (distance < 2000) {
-        print('hihihi');
-        await _showNotification(
-          notifyList[i].location,
-          notifyList[i].name,
-          i.toString(),
-        );
+      if (isSameDate || notifyList[i].date == null) {
+        print('gfssg');
+        if (distance < 2000) {
+          await _showNotification(
+            notifyList[i].location,
+            notifyList[i].name,
+            i.toString(),
+            phone
+          );
+        }
+      } else {
+        print('no distance');
       }
     }
   }
+
+  // Close the Hive box to clean up resources
+  await notifyBox.close();
 }
 
 Future<void> _showNotification(
   String location,
   String name,
   String notificationId,
+  String phone
 ) async {
   final uniqueId = sha1.convert(utf8.encode(location + name)).toString();
-  final place=location.split(',');
-  print(place[0]);
+  final place = location.split(',');
 
   void _sendsms() async {
-    List<String> recipents = ["+917902561866"];
+    List<String> recipents = [phone];
 
-    String direct=await sendSMS(message: "Test Messege", recipients: recipents,sendDirect: true);
+    String direct = await sendSMS(
+        message: '$name ${place[0]} is less than 1000 meters!', recipients: recipents, sendDirect: true);
     print(direct);
-
   }
 
   const AndroidNotificationDetails androidPlatformChannelSpecifics =
@@ -112,23 +189,20 @@ Future<void> _showNotification(
   await flutterLocalNotificationsPlugin.show(
     uniqueId.hashCode,
     'Alarm',
-    '$name  ...\n' 
-    '${place[0]} is less than 1000 meters!',
+    '$name  ...\n'
+        '${place[0]} is less than 1000 meters!',
     platformChannelSpecifics,
     payload: notificationId,
   );
   //  _sendsms();
 }
+
 void backgroundTask() async {
-  distanceMeasure();
-  
+  await distanceMeasure();
 }
-
-
 
 //------------------------------------------------------------------------------------------------------------
 void reminderdistanceMeasure() async {
-  print('rem distancemeasure');
   double distance;
   List<TaskModel> taskList = [];
 
@@ -139,14 +213,12 @@ void reminderdistanceMeasure() async {
       Hive.registerAdapter(TaskModelAdapter());
     }
     final taskBox = await Hive.openBox<TaskModel>('task_db');
-    print(' task db values ${taskBox.values}');
     taskList.clear();
     taskList.addAll(taskBox.values);
     return taskList;
   }
 
   taskList = await getAllTasks();
-  print(taskList);
 
   bool serviceEnabled;
   LocationPermission permission;
@@ -182,36 +254,51 @@ void reminderdistanceMeasure() async {
       latitude,
       longitude,
     );
-    print(distance);
     if (distance < 2000) {
-      print('hihihi');
-       _showAlarmScreen(
-        
+      if(taskList[i].category=='Buy'){
+        _showAlarmScreen_buy(
         taskList[i].location,
         taskList[i].task,
         i.toString(),
       );
     }
+    if(taskList[i].category=='Other'){
+        _showAlarmScreen_other(
+        taskList[i].location,
+        taskList[i].task,
+        i.toString(),
+      );
+    }
+    if(taskList[i].category=='Visit'){
+        _showAlarmScreen_visit(
+        taskList[i].location,
+        taskList[i].task,
+        i.toString(),
+      );
+    }
+      
+    }
   }
 }
-void _showAlarmScreen(String location,
-  String name,
-  String notificationId,) async{
-  final uniqueId = sha1.convert(utf8.encode(location + name)).toString();
-  final place=location.split(',');
 
-  // void _sendsms() async {
-  //   List<String> recipents = ["+917902561866"];
-  //   await sendSMS(message: "hi morning", recipients: recipents,sendDirect: true);
-  // }
+void _showAlarmScreen_buy(
+  String location,
+  String name,
+  String notificationId,
+) async {
+  final uniqueId = sha1.convert(utf8.encode(location + name)).toString();
+  final place = location.split(',');
+
+  
 
   const AndroidNotificationDetails androidPlatformChannelSpecifics =
       AndroidNotificationDetails(
-    'your_channel_id',
+    'your_channel_id_1',
     'your_channel_name',
     importance: Importance.max,
     priority: Priority.high,
     showWhen: false,
+    sound: RawResourceAndroidNotificationSound('buy')
   );
   const NotificationDetails platformChannelSpecifics =
       NotificationDetails(android: androidPlatformChannelSpecifics);
@@ -221,9 +308,69 @@ void _showAlarmScreen(String location,
     name,
     '${place[0]} is less than 1000 meters!',
     platformChannelSpecifics,
-    payload: notificationId,
+    payload: place[0],
+  );
+  flutterLocalNotificationsPlugin.initialize(
+    const InitializationSettings(
+      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+    ),
+    onDidReceiveNotificationResponse: (NotificationResponse response) async {
+      // Navigate to the AlarmScreen
+      Navigator.push(
+        navigatorKey.currentState!.context,
+        MaterialPageRoute(builder: (context) => AlarmScreen(place: response.payload!)),
+      );
+    },
   );
   
+}
+
+
+
+void _showAlarmScreen_visit(
+  String location,
+  String name,
+  String notificationId,
+) async {
+  final uniqueId = sha1.convert(utf8.encode(location + name)).toString();
+  final place = location.split(',');
+
+  // void _sendsms() async {
+  //   List<String> recipents = ["+917902561866"];
+  //   await sendSMS(message: "hi morning", recipients: recipents,sendDirect: true);
+  // }
+
+  const AndroidNotificationDetails androidPlatformChannelSpecifics =
+      AndroidNotificationDetails(
+    'your_channel_id_2',
+    'your_channel_name',
+    importance: Importance.max,
+    priority: Priority.high,
+    showWhen: false,
+    sound: RawResourceAndroidNotificationSound('visit')
+  );
+  const NotificationDetails platformChannelSpecifics =
+      NotificationDetails(android: androidPlatformChannelSpecifics);
+
+  await flutterLocalNotificationsPlugin.show(
+    uniqueId.hashCode,
+    name,
+    '${place[0]} is less than 1000 meters!',
+    platformChannelSpecifics,
+    payload: place[0],
+  );
+  flutterLocalNotificationsPlugin.initialize(
+    const InitializationSettings(
+      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+    ),
+    onDidReceiveNotificationResponse: (NotificationResponse response) async {
+      // Navigate to the AlarmScreen
+      Navigator.push(
+        navigatorKey.currentState!.context,
+        MaterialPageRoute(builder: (context) => AlarmScreen(place: response.payload!)),
+      );
+    },
+  );
   // Navigator.push(
   //   context,
   //   MaterialPageRoute(
@@ -231,16 +378,79 @@ void _showAlarmScreen(String location,
   //   ),
   // );
 }
- 
+void _showAlarmScreen_other(
+  String location,
+  String name,
+  String notificationId,
+) async {
+  final uniqueId = sha1.convert(utf8.encode(location + name)).toString();
+  final place = location.split(',');
+
+  // void _sendsms() async {
+  //   List<String> recipents = ["+917902561866"];
+  //   await sendSMS(message: "hi morning", recipients: recipents,sendDirect: true);
+  // }
+
+  const AndroidNotificationDetails androidPlatformChannelSpecifics =
+      AndroidNotificationDetails(
+    'your_channel_id_3',
+    'your_channel_name',
+    importance: Importance.max,
+    priority: Priority.high,
+    showWhen: false,
+    sound: RawResourceAndroidNotificationSound('other')
+  );
+  const NotificationDetails platformChannelSpecifics =
+      NotificationDetails(android: androidPlatformChannelSpecifics);
+
+  await flutterLocalNotificationsPlugin.show(
+    uniqueId.hashCode,
+    name,
+    '${place[0]} is less than 1000 meters!',
+    platformChannelSpecifics,
+    payload: place[0],
+  );
+  flutterLocalNotificationsPlugin.initialize(
+    const InitializationSettings(
+      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+    ),
+    onDidReceiveNotificationResponse: (NotificationResponse response) async {
+      // Navigate to the AlarmScreen
+      Navigator.push(
+        navigatorKey.currentState!.context,
+        MaterialPageRoute(builder: (context) => AlarmScreen(place: response.payload!)),
+      );
+    },
+  );
+
+  // Navigator.push(
+  //   context,
+  //   MaterialPageRoute(
+  //     builder: (context) => AlarmScreen(place: location),
+  //   ),
+  // );
+}
+// Add this function to your code
+// void initializeNotifications() {
+//   flutterLocalNotificationsPlugin.initialize(
+//     InitializationSettings(
+//       android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+//     ),
+//     onDidReceiveNotificationResponse: (NotificationResponse response) async {
+//       // Navigate to the AlarmScreen
+//       Navigator.push(
+//         navigatorKey.currentState!.context,
+//         MaterialPageRoute(builder: (context) => AlarmScreen(place: response.payload!)),
+//       );
+//     },
+//   );
+// }
+
 void reminderbackgroundTask() async {
-  
   reminderdistanceMeasure();
 }
 
-
- backgroundTaskTest() async {
+backgroundTaskTest() async {
   distanceMeasure();
   reminderdistanceMeasure();
 }
-
-
