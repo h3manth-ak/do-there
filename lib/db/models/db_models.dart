@@ -21,6 +21,8 @@ class TaskModel{
   final DateTime? date;
   @HiveField(6)
   final String category;
+  @HiveField(7)
+  double?distance;
   bool isOn=true;
   bool isVisible=false;
   TaskModel({required this.latitude,required this.longitude, required this.task, required this.location,required this.category,this.date,int? id}): _id = id;

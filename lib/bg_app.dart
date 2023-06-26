@@ -117,7 +117,7 @@ void onStart(ServiceInstance service) async {
 
   void initializeNotifications() {
   flutterLocalNotificationsPlugin.initialize(
-    InitializationSettings(
+    const InitializationSettings(
       android: AndroidInitializationSettings('@mipmap/ic_launcher'),
     ),
     onDidReceiveNotificationResponse: (NotificationResponse response) async {
@@ -139,10 +139,10 @@ void onStart(ServiceInstance service) async {
       final uniqueId = sha1.convert(utf8.encode(location + name)).toString();
       final place = location.split(',');
       final phno=phone;
-      void _sendsms() async {
+      Future<void> _sendsms() async {
         List<String> recipients = [phno];
         String direct = await sendSMS(
-            message: "$name $location is less than 1000 meters", recipients: recipients, sendDirect: true);
+            message: "Hi $name $location is less than 1000 meters! from my current location ", recipients: recipients, sendDirect: true);
         debugPrint(direct);
       }
 
@@ -176,7 +176,7 @@ void onStart(ServiceInstance service) async {
 
       // Handle notification click
       flutterLocalNotificationsPlugin.initialize(
-        InitializationSettings(
+        const InitializationSettings(
           android: AndroidInitializationSettings('@mipmap/ic_launcher'),
         ),
         onDidReceiveNotificationResponse:
@@ -189,7 +189,7 @@ void onStart(ServiceInstance service) async {
         },
       );
 
-      // _sendsms();
+      await _sendsms();
     }
 
     void distanceMeasure_1() async {
@@ -239,8 +239,6 @@ void onStart(ServiceInstance service) async {
         // Compare the date component only, ignoring the time
         bool isSameDate = DateFormat('yyyy-MM-dd').format(storedDate!) ==
             DateFormat('yyyy-MM-dd').format(today);
-        print('isSameDate $isSameDate');
-        print(notifyList[i].date == null);
         distance = Geolocator.distanceBetween(
           currentPosition.latitude,
           currentPosition.longitude,
@@ -302,7 +300,7 @@ void onStart(ServiceInstance service) async {
   );
   // void initializeNotifications() {
   flutterLocalNotificationsPlugin.initialize(
-    InitializationSettings(
+    const InitializationSettings(
       android: AndroidInitializationSettings('@mipmap/ic_launcher'),
     ),
     onDidReceiveNotificationResponse: (NotificationResponse response) async {
@@ -353,7 +351,7 @@ void _showAlarmScreen_visit(
     payload: place[0],
   );
   flutterLocalNotificationsPlugin.initialize(
-    InitializationSettings(
+    const InitializationSettings(
       android: AndroidInitializationSettings('@mipmap/ic_launcher'),
     ),
     onDidReceiveNotificationResponse: (NotificationResponse response) async {
@@ -405,7 +403,7 @@ void _showAlarmScreen_other(
   );
 
   flutterLocalNotificationsPlugin.initialize(
-    InitializationSettings(
+    const InitializationSettings(
       android: AndroidInitializationSettings('@mipmap/ic_launcher'),
     ),
     onDidReceiveNotificationResponse: (NotificationResponse response) async {

@@ -23,13 +23,15 @@ class TaskModelAdapter extends TypeAdapter<TaskModel> {
       location: fields[2] as String,
       category: fields[6] as String,
       date: fields[5] as DateTime?,
-    ).._id = fields[0] as int?;
+    )
+      .._id = fields[0] as int?
+      ..distance = fields[7] as double?;
   }
 
   @override
   void write(BinaryWriter writer, TaskModel obj) {
     writer
-      ..writeByte(7)
+      ..writeByte(8)
       ..writeByte(0)
       ..write(obj._id)
       ..writeByte(1)
@@ -43,7 +45,9 @@ class TaskModelAdapter extends TypeAdapter<TaskModel> {
       ..writeByte(5)
       ..write(obj.date)
       ..writeByte(6)
-      ..write(obj.category);
+      ..write(obj.category)
+      ..writeByte(7)
+      ..write(obj.distance);
   }
 
   @override

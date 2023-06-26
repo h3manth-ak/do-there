@@ -122,9 +122,6 @@ distanceMeasure() async {
     // Compare the date component only, ignoring the time
     isSameDate = DateFormat('yyyy-MM-dd').format(storedDate!) ==
         DateFormat('yyyy-MM-dd').format(today);
-    print(isSameDate);
-    print(notifyList[i].date);
-    print(notifyList[i].date == null);
     for(int j = 0; j < userList.length; j++){
         if(notifyList[i].name==userList[j].name){
           phone=userList[j].phno;
@@ -139,7 +136,6 @@ distanceMeasure() async {
     );
     if (notifyList[i].distance != null) {
       if (isSameDate || notifyList[i].date == null) {
-        print('gfssg');
         if (distance < 2000) {
           await _showNotification(
             notifyList[i].location,
@@ -149,7 +145,6 @@ distanceMeasure() async {
           );
         }
       } else {
-        print('no distance');
       }
     }
   }
@@ -167,12 +162,11 @@ Future<void> _showNotification(
   final uniqueId = sha1.convert(utf8.encode(location + name)).toString();
   final place = location.split(',');
 
-  void _sendsms() async {
+  Future<void> _sendsms() async {
     List<String> recipents = [phone];
-
-    String direct = await sendSMS(
-        message: '$name ${place[0]} is less than 1000 meters!', recipients: recipents, sendDirect: true);
-    print(direct);
+    print(recipents);
+    await sendSMS(
+        message: 'Hi $name ${place[0]} is less than 1000 meters! from my current location ', recipients: recipents, sendDirect: true);
   }
 
   const AndroidNotificationDetails androidPlatformChannelSpecifics =
@@ -194,7 +188,7 @@ Future<void> _showNotification(
     platformChannelSpecifics,
     payload: notificationId,
   );
-  //  _sendsms();
+   await _sendsms();
 }
 
 void backgroundTask() async {
@@ -423,28 +417,9 @@ void _showAlarmScreen_other(
     },
   );
 
-  // Navigator.push(
-  //   context,
-  //   MaterialPageRoute(
-  //     builder: (context) => AlarmScreen(place: location),
-  //   ),
-  // );
+ 
 }
-// Add this function to your code
-// void initializeNotifications() {
-//   flutterLocalNotificationsPlugin.initialize(
-//     InitializationSettings(
-//       android: AndroidInitializationSettings('@mipmap/ic_launcher'),
-//     ),
-//     onDidReceiveNotificationResponse: (NotificationResponse response) async {
-//       // Navigate to the AlarmScreen
-//       Navigator.push(
-//         navigatorKey.currentState!.context,
-//         MaterialPageRoute(builder: (context) => AlarmScreen(place: response.payload!)),
-//       );
-//     },
-//   );
-// }
+
 
 void reminderbackgroundTask() async {
   reminderdistanceMeasure();

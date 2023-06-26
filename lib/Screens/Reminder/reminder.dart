@@ -274,14 +274,15 @@ class SwitchClass extends State<Reminder> {
               onPressed: () {
                 // Navigator.popUntil(
                 //     context, (route) => route.settings.name == 'home_screen');
+                Navigator.of(context).pushNamed('home_screen');
               },
               heroTag: 'home',
               tooltip: 'Home',
+              backgroundColor: const Color.fromARGB(255, 20, 19, 19),
               child: const Icon(
                 Icons.home,
                 color: Colors.green,
               ),
-              backgroundColor: const Color.fromARGB(255, 20, 19, 19),
             )),
             Expanded(
                 child: FloatingActionButton(

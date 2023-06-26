@@ -11,13 +11,20 @@ ValueNotifier<List<TaskModel>> taskListNotifier = ValueNotifier([]);
 ValueNotifier<List<NotifyModel>> notifyListNotifier = ValueNotifier([]);
 ValueNotifier<List<UserModel>> userListNotifier = ValueNotifier([]);
 
+// Future<void> addTask(TaskModel task) async {
+//   final taskDB = await Hive.openBox<TaskModel>('task_db');
+//   final _id = await taskDB.add(task);
+//   task.id = _id;
+//   taskListNotifier.value.add(task);
+//   taskListNotifier.notifyListeners();
+//   // print(task.toString());
+// }
 Future<void> addTask(TaskModel task) async {
   final taskDB = await Hive.openBox<TaskModel>('task_db');
   final _id = await taskDB.add(task);
   task.id = _id;
-  taskListNotifier.value.add(task);
+  taskListNotifier.value = List<TaskModel>.from(taskListNotifier.value)..add(task); // Update the taskListNotifier.value list
   taskListNotifier.notifyListeners();
-  // print(task.toString());
 }
 
 Future<void> getAllTask() async {
@@ -30,7 +37,9 @@ Future<void> getAllTask() async {
 Future<void> deleteTask(int id) async {
   final taskDB = await Hive.openBox<TaskModel>('task_db');
   await taskDB.delete(id);
-  getAllTask();
+  await taskDB.compact(); // Compact the database to reclaim deleted space
+  await taskDB.close(); // Close the database
+  await getAllTask(); // Reload the task list from the database
 }
 
 Future<void> addNotify(NotifyModel notify) async {

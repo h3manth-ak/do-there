@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../db/functions/db_functions.dart';
@@ -13,6 +15,7 @@ class TodayTasksScreen extends StatefulWidget {
 class _TodayTasksScreenState extends State<TodayTasksScreen> {
   List<TaskModel> orderedTaskList = [];
   List<TaskModel> taskList = [];
+  List<TaskModel> todayTasks = [];
   @override
   void initState() {
     super.initState();
@@ -20,10 +23,147 @@ class _TodayTasksScreenState extends State<TodayTasksScreen> {
     getAllTask();
   }
 
+  void showOrderedLocationsDialog(
+      List<TaskModel> orderedLocations, double totalDistance) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          backgroundColor: Colors.transparent,
+          elevation: 0.0,
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            width: MediaQuery.of(context).size.width * 0.8,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.all(10.0),
+                  child: Text(
+                    'Ordered Locations',
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: AnimatedOpacity(
+                      duration: const Duration(milliseconds: 1000),
+                      opacity: 1.0,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children:
+                            List.generate(orderedLocations.length, (index) {
+                          final location = orderedLocations[index];
+                          final locationParts = location.location.split(',');
+                          final locationName =
+                              '${locationParts[0]}, ${locationParts[1]}';
+                          final distanceToNext = index <
+                                  orderedLocations.length - 1
+                              ? (location.distance! / 1000).toStringAsFixed(2)
+                              : '';
+
+                          return Column(
+                            children: [
+                              Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  SingleChildScrollView(
+                                    scrollDirection: Axis.horizontal,
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.start,
+                                      children: [
+                                        const Icon(Icons.location_on,color: Colors.green),
+                                        Text(
+                                          locationName,
+                                          style: const TextStyle(
+                                              fontSize: 16,
+                                              // fontWeight: FontWeight.bold,
+                                              color: Color.fromARGB(255, 228, 132, 132)),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Column(
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      if (index < orderedLocations.length - 1)
+                                        Transform.rotate(
+                                          angle: 0 * (pi / 180),
+                                          child:
+                                              const Icon(Icons.arrow_downward,color: Colors.amber),
+                                        ),
+                                      if (index < orderedLocations.length - 1)
+                                        const SizedBox(width: 8),
+                                      if (index < orderedLocations.length - 1)
+                                        Text(
+                                          '$distanceToNext km',
+                                          style: const TextStyle(
+                                              fontSize: 16,
+                                              // fontWeight: FontWeight.bold,
+                                              color: Colors.white),
+                                        ),
+                                    ],
+                                  ),
+                                  if (index < orderedLocations.length - 1)
+                                    const SizedBox(height: 16),
+                                  const Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [],
+                                  ),
+                                  if (index < orderedLocations.length - 1)
+                                    const SizedBox(height: 16),
+                                ],
+                              ),
+                            ],
+                          );
+                        }),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Total Distance to Cover today ${totalDistance.round()} km',
+                  style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Close'),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  
+
   @override
   Widget build(BuildContext context) {
     // getAllTask();
-    
+
     return Scaffold(
       backgroundColor: Colors.black87,
       body: SafeArea(
@@ -31,13 +171,14 @@ class _TodayTasksScreenState extends State<TodayTasksScreen> {
           valueListenable: taskListNotifier,
           builder: (BuildContext ctx, List<TaskModel> taskList, Widget? child) {
             final today = DateTime.now();
-            final todayTasks = taskList
+            todayTasks = taskList
                 .where((task) =>
                     task.date!.year == today.year &&
                     task.date!.month == today.month &&
                     task.date!.day == today.day)
                 .toList();
             // print(todayTasks.length);
+            todayTasks = todayTasks;
 
             return GridView.count(
               crossAxisCount: 2,
@@ -152,14 +293,19 @@ class _TodayTasksScreenState extends State<TodayTasksScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.of(context).pushNamed('reminder_data');
+        onPressed: () async {
+          Map<String, dynamic> tspSolution = await solveTSP(todayTasks);
+          List<TaskModel> orderedTaskList = tspSolution['orderedTasks'];
+          double totalDistance = tspSolution['totalDistance'] /
+              1000; // Convert total distance to kilometers
+
+          showOrderedLocationsDialog(orderedTaskList, totalDistance);
         },
         backgroundColor: const Color.fromARGB(255, 20, 19, 19),
         heroTag: 'Task',
         tooltip: 'Add Task',
         child: const Icon(
-          Icons.add,
+          Icons.route_outlined,
           color: Colors.green,
         ),
       ),
@@ -172,10 +318,8 @@ class _TodayTasksScreenState extends State<TodayTasksScreen> {
               child: FloatingActionButton(
                 onPressed: () {
                   // Navigate to home screen
-                  Navigator.popUntil(
-                    context,
-                    (route) => route.settings.name == 'home_screen',
-                  );
+                  Navigator.of(context).pushNamed('home_screen');
+                  
                 },
                 heroTag: 'home',
                 tooltip: 'Home',
@@ -192,40 +336,56 @@ class _TodayTasksScreenState extends State<TodayTasksScreen> {
       floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
     );
   }
-  Future<List<TaskModel>> solveTSP(List<TaskModel> tasks) async{
-    if (tasks.isEmpty){
-      return [];
+  Future<Map<String, dynamic>> solveTSP(List<TaskModel> tasks) async {
+    if (tasks.isEmpty) {
+      return {'orderedTasks': [], 'totalDistance': 0.0};
     }
-    Position position =await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.best);
-    double latitude= position.latitude;
-    double longitude= position.longitude;
+    Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.best);
+    double latitude = position.latitude;
+    double longitude = position.longitude;
 
-   List<TaskModel> remainingTasks=tasks;
-   List<TaskModel> orderedTasks=[];
+    List<TaskModel> remainingTasks = tasks;
+    List<TaskModel> orderedTasks = [];
+    double totalDistance = 0.0; // Initialize total distance
 
-   while(remainingTasks.isEmpty){
-
-    TaskModel nearestTask=remainingTasks.first;
-    double minDistance=double.infinity;
-    for(final task in remainingTasks){
-      final distance=Geolocator.distanceBetween(latitude, longitude, task.latitude, task.longitude);
-      if (distance < minDistance) {
-        minDistance = distance;
-        nearestTask = task;
+    while (remainingTasks.isNotEmpty) {
+      TaskModel nearestTask = remainingTasks.first;
+      double minDistance = double.infinity;
+      for (final task in remainingTasks) {
+        final distance = Geolocator.distanceBetween(
+            latitude, longitude, task.latitude, task.longitude);
+        if (distance < minDistance) {
+          minDistance = distance;
+          nearestTask = task;
+        }
       }
+      orderedTasks.add(nearestTask);
+      remainingTasks.remove(nearestTask);
 
+      // Update total distance
+      totalDistance += minDistance;
+
+      latitude = nearestTask.latitude;
+      longitude = nearestTask.longitude;
     }
-    orderedTasks.add(nearestTask);
-    remainingTasks.remove(nearestTask);
 
-     latitude = nearestTask.latitude;
-    longitude = nearestTask.longitude;
+    for (int i = 0; i < orderedTasks.length - 1; i++) {
+      final distance = Geolocator.distanceBetween(
+          orderedTasks[i].latitude,
+          orderedTasks[i].longitude,
+          orderedTasks[i + 1].latitude,
+          orderedTasks[i + 1].longitude);
+      orderedTasks[i].distance = distance;
+    }
 
-   }
-   for (int i = 0; i < orderedTasks.length; i++) {
-    print('Place ${i + 1}: ${orderedTasks[i].location}');
-  }
-   // now i want to change lattitude after first min distance is calculated and then it works well
-    return orderedTasks;
+    for (int i = 0; i < orderedTasks.length; i++) {
+      // print('Place ${i + 1}: ${orderedTasks[i].location}');
+      if (i < orderedTasks.length - 1) {
+      }
+    }
+
+
+    return {'orderedTasks': orderedTasks, 'totalDistance': totalDistance};
   }
 }

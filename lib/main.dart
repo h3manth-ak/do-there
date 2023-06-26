@@ -14,6 +14,7 @@ import 'package:location_based_reminder/Screens/Reminder/today_data.dart';
 import 'package:location_based_reminder/Screens/home/screen_home.dart';
 import 'package:location_based_reminder/db/models/db_models.dart';
 import 'package:permission_handler/permission_handler.dart';
+// import 'package:provider/provider.dart';
 import 'background.dart' as bgnd;
 import 'bg_app.dart' as bg;
 
@@ -76,7 +77,7 @@ Future<void> main() async {
     wakeup: true,
   );
 
-  runApp(const MyApp());
+  runApp( MyApp());
 }
 
 class MyApp extends StatefulWidget {
@@ -130,3 +131,4 @@ class _MyAppState extends State<MyApp> {
     );
   }
 }
+
